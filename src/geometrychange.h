@@ -31,7 +31,7 @@ private:
     {
         qint64 createdTime = 0;
         int animationInstances = 0;
-        bool maximizedStateAboutToChange = false;
+        bool maximizeChangePending = false;
     };
 
     void manage(KWin::EffectWindow *window);

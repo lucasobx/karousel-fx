@@ -4,6 +4,7 @@
 
 #include <effect/effecthandler.h>
 #include <effect/effectwindow.h>
+#include <window.h>
 
 #include <QDateTime>
 #include <QEasingCurve>
@@ -56,10 +57,17 @@ void GeometryChange::manage(EffectWindow *window)
 {
     m_windows.insert(window, WindowData{.createdTime = QDateTime::currentMSecsSinceEpoch()});
     connect(window, &EffectWindow::windowFrameGeometryChanged, this, &GeometryChange::onWindowFrameGeometryChanged);
-    connect(window, &EffectWindow::windowMaximizedStateAboutToChange, this, [this, window] {
+    connect(window, &EffectWindow::windowMaximizedStateAboutToChange, this, [this, window](EffectWindow *, bool horizontal, bool vertical) {
         const auto data = m_windows.find(window);
         if (data != m_windows.end()) {
-            data->maximizedStateAboutToChange = true;
+            const auto requested = static_cast<MaximizeMode>((horizontal ? MaximizeHorizontal : MaximizeRestore) | (vertical ? MaximizeVertical : MaximizeRestore));
+            data->maximizeChangePending = requested != window->window()->maximizeMode();
+        }
+    });
+    connect(window, &EffectWindow::windowMaximizedStateChanged, this, [this, window] {
+        const auto data = m_windows.find(window);
+        if (data != m_windows.end()) {
+            data->maximizeChangePending = false;
         }
     });
 }
@@ -92,8 +100,8 @@ void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const Re
 
     const bool windowTypeSupportsAnimation = window->isNormalWindow() || window->isDialog() || window->isModal();
     const bool isUserMoveResize = window->isUserMove() || isAnyWindowUserResized();
-    const bool maximizationChange = data->maximizedStateAboutToChange;
-    data->maximizedStateAboutToChange = false;
+    const bool maximizationChange = data->maximizeChangePending;
+    data->maximizeChangePending = false;
     if (!window->isManaged()
         || !window->isVisible()
         || !window->isOnCurrentDesktop()
