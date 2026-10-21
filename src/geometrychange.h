@@ -28,6 +28,8 @@ public:
 
 private:
     static constexpr std::chrono::milliseconds openingDuration{250};
+    static constexpr qreal resizeThreshold = 10;
+    static constexpr qreal moveThreshold = 1;
 
     struct WindowData
     {

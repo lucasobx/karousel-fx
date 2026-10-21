@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 
 using namespace KWin;
 
@@ -153,14 +154,23 @@ void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const Re
     const qreal heightDelta = newGeometry.height() - oldGeometry.height();
     const qreal widthRatio = oldGeometry.width() / newGeometry.width();
     const qreal heightRatio = oldGeometry.height() / newGeometry.height();
+    const bool resized = std::max(std::abs(widthDelta), std::abs(heightDelta)) > resizeThreshold;
+    const bool moved = std::max(std::abs(xDelta), std::abs(yDelta)) > moveThreshold;
+    if (!resized && !moved) {
+        return;
+    }
 
-    data->animationInstances += m_crossFade ? 3 : 2;
+    data->animationInstances += (resized ? 2 : 1) + (m_crossFade ? 1 : 0);
     window->setData(WindowForceBlurRole, true);
 
     const QEasingCurve curve(QEasingCurve::OutExpo);
-    m_effect.animate(window, AnimationEffect::Translation, 0, m_duration, FPx2(0, 0), curve, 0,
-                     FPx2(-xDelta - widthDelta / 2, -yDelta - heightDelta / 2));
-    m_effect.animate(window, AnimationEffect::Scale, 0, m_duration, FPx2(1, 1), curve, 0, FPx2(widthRatio, heightRatio));
+    if (resized) {
+        m_effect.animate(window, AnimationEffect::Translation, 0, m_duration, FPx2(0, 0), curve, 0,
+                         FPx2(-xDelta - widthDelta / 2, -yDelta - heightDelta / 2));
+        m_effect.animate(window, AnimationEffect::Scale, 0, m_duration, FPx2(1, 1), curve, 0, FPx2(widthRatio, heightRatio));
+    } else {
+        m_effect.animate(window, AnimationEffect::Translation, 0, m_duration, FPx2(0, 0), curve, 0, FPx2(-xDelta, -yDelta));
+    }
     if (m_crossFade) {
         m_effect.animate(window, AnimationEffect::CrossFadePrevious, 0, m_duration, FPx2(1), curve, 0, FPx2(0));
     }
