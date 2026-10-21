@@ -27,6 +27,8 @@ public:
     void restoreForceBlurState(KWin::EffectWindow *window);
 
 private:
+    static constexpr std::chrono::milliseconds openingDuration{250};
+
     struct WindowData
     {
         qint64 createdTime = 0;
@@ -44,5 +46,6 @@ private:
     std::chrono::milliseconds m_duration{0};
     QStringList m_excludedWindowClasses;
     bool m_crossFade = false;
+    std::chrono::milliseconds m_openingDuration{0};
     QHash<KWin::EffectWindow *, WindowData> m_windows;
 };

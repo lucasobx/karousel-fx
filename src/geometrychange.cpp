@@ -10,8 +10,17 @@
 #include <QEasingCurve>
 
 #include <algorithm>
+#include <array>
 
 using namespace KWin;
+
+static bool isGrabbedByAnotherEffect(const EffectWindow *window)
+{
+    constexpr std::array roles{WindowAddedGrabRole, WindowClosedGrabRole, WindowMinimizedGrabRole, WindowUnminimizedGrabRole};
+    return std::ranges::any_of(roles, [window](DataRole role) {
+        return window->data(role).isValid();
+    });
+}
 
 static bool isAnyWindowUserResized()
 {
@@ -51,6 +60,7 @@ void GeometryChange::reconfigure()
     m_duration = Effect::animationTime(std::chrono::milliseconds(m_config.geometryChangeDuration()));
     m_excludedWindowClasses = m_config.geometryChangeExcludedWindowClasses().split(QLatin1Char(','));
     m_crossFade = m_config.geometryChangeCrossFade();
+    m_openingDuration = Effect::animationTime(GeometryChange::openingDuration);
 }
 
 void GeometryChange::manage(EffectWindow *window)
@@ -115,7 +125,8 @@ void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const Re
         || window->isMinimized()
         || !windowTypeSupportsAnimation
         || (isUserMoveResize && !maximizationChange)
-        || isWindowClassExcluded(window->windowClass())) {
+        || isWindowClassExcluded(window->windowClass())
+        || isGrabbedByAnotherEffect(window)) {
         return;
     }
 
@@ -131,7 +142,7 @@ void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const Re
     const qint64 windowAgeMs = now - data->createdTime;
     if (windowAgeMs < 0) {
         data->createdTime = now;
-    } else if (windowAgeMs < 10) {
+    } else if (std::chrono::milliseconds(windowAgeMs) < m_openingDuration) {
         return;
     }
 
