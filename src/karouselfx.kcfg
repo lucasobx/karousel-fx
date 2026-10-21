@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+    <kcfgfile arg="true"/>
+    <group name="Effect-karousel-fx">
+        <entry name="FocusRingEnabled" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="FocusRingThickness" type="Double">
+            <default>2</default>
+            <min>0.5</min>
+            <max>20</max>
+        </entry>
+        <entry name="FocusRingUseAccentColor" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="FocusRingColor" type="Color">
+            <default>61,174,233</default>
+        </entry>
+    </group>
+</kcfg>

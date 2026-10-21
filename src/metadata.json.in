@@ -1,0 +1,11 @@
+{
+    "KPlugin": {
+        "Category": "Appearance",
+        "Description": "Visual effects for Karousel",
+        "EnabledByDefault": false,
+        "License": "GPL-3.0-or-later",
+        "Name": "@KAROUSELFX_PLUGIN_NAME@"
+    },
+    "X-KDE-ConfigModule": "@KAROUSELFX_PLUGIN_ID@_config",
+    "X-KDE-Ordering": 60
+}

@@ -1,0 +1,36 @@
+cmake_minimum_required(VERSION 3.25)
+
+project(karousel-fx VERSION 0.1.0 LANGUAGES CXX)
+
+set(QT_MAJOR_VERSION 6)
+set(QT_MIN_VERSION "6.8.0")
+set(KF_MIN_VERSION "6.10.0")
+
+find_package(ECM ${KF_MIN_VERSION} REQUIRED NO_MODULE)
+set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
+
+set(KDE_SKIP_UNINSTALL_TARGET ON)
+
+include(KDEInstallDirs)
+include(KDECMakeSettings)
+include(KDECompilerSettings NO_POLICY_SCOPE)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+list(APPEND CMAKE_AUTOMOC_MACRO_NAMES
+    KWIN_EFFECT_FACTORY
+    KWIN_EFFECT_FACTORY_ENABLED
+    KWIN_EFFECT_FACTORY_SUPPORTED
+    KWIN_EFFECT_FACTORY_SUPPORTED_ENABLED
+)
+
+find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Widgets DBus)
+find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS ColorScheme Config CoreAddons KCMUtils WidgetsAddons)
+find_package(KDecoration3 6.7 REQUIRED)
+find_package(KWin 6.7 REQUIRED)
+
+set(KAROUSELFX_PLUGIN_ID "karousel-fx" CACHE STRING "")
+set(KAROUSELFX_PLUGIN_NAME "Karousel FX" CACHE STRING "")
+
+add_subdirectory(src)
