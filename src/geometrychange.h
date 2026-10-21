@@ -43,6 +43,5 @@ private:
     std::chrono::milliseconds m_duration{0};
     QStringList m_excludedWindowClasses;
     bool m_crossFade = false;
-    bool m_userResizing = false;
     QHash<KWin::EffectWindow *, WindowData> m_windows;
 };

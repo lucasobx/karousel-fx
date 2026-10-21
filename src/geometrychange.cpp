@@ -12,6 +12,14 @@
 
 using namespace KWin;
 
+static bool isAnyWindowUserResized()
+{
+    const QList<EffectWindow *> windows = effects->stackingOrder();
+    return std::ranges::any_of(windows, [](const EffectWindow *window) {
+        return window->isUserResize();
+    });
+}
+
 GeometryChange::GeometryChange(KarouselFxEffect &effect, const KarouselFxConfig &config)
     : m_effect(effect)
     , m_config(config)
@@ -54,12 +62,6 @@ void GeometryChange::manage(EffectWindow *window)
             data->maximizedStateAboutToChange = true;
         }
     });
-    connect(window, &EffectWindow::windowStartUserMovedResized, this, [this] {
-        m_userResizing = true;
-    });
-    connect(window, &EffectWindow::windowFinishUserMovedResized, this, [this] {
-        m_userResizing = false;
-    });
 }
 
 void GeometryChange::restoreForceBlurState(EffectWindow *window)
@@ -89,7 +91,7 @@ void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const Re
     }
 
     const bool windowTypeSupportsAnimation = window->isNormalWindow() || window->isDialog() || window->isModal();
-    const bool isUserMoveResize = window->isUserMove() || window->isUserResize() || m_userResizing;
+    const bool isUserMoveResize = window->isUserMove() || isAnyWindowUserResized();
     const bool maximizationChange = data->maximizedStateAboutToChange;
     data->maximizedStateAboutToChange = false;
     if (!window->isManaged()
