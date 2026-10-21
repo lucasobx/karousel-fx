@@ -32,6 +32,7 @@ private:
         qint64 createdTime = 0;
         int animationInstances = 0;
         bool maximizeChangePending = false;
+        bool fullScreen = false;
     };
 
     void manage(KWin::EffectWindow *window);

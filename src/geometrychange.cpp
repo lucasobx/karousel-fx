@@ -55,7 +55,7 @@ void GeometryChange::reconfigure()
 
 void GeometryChange::manage(EffectWindow *window)
 {
-    m_windows.insert(window, WindowData{.createdTime = QDateTime::currentMSecsSinceEpoch()});
+    m_windows.insert(window, WindowData{.createdTime = QDateTime::currentMSecsSinceEpoch(), .fullScreen = window->isFullScreen()});
     connect(window, &EffectWindow::windowFrameGeometryChanged, this, &GeometryChange::onWindowFrameGeometryChanged);
     connect(window, &EffectWindow::windowMaximizedStateAboutToChange, this, [this, window](EffectWindow *, bool horizontal, bool vertical) {
         const auto data = m_windows.find(window);
@@ -68,6 +68,12 @@ void GeometryChange::manage(EffectWindow *window)
         const auto data = m_windows.find(window);
         if (data != m_windows.end()) {
             data->maximizeChangePending = false;
+        }
+    });
+    connect(window, &EffectWindow::windowFullScreenChanged, this, [this, window] {
+        const auto data = m_windows.find(window);
+        if (data != m_windows.end()) {
+            data->fullScreen = window->isFullScreen();
         }
     });
 }
@@ -102,6 +108,7 @@ void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const Re
     const bool isUserMoveResize = window->isUserMove() || isAnyWindowUserResized();
     const bool maximizationChange = data->maximizeChangePending;
     data->maximizeChangePending = false;
+    const bool fullScreenChange = window->window()->isRequestedFullScreen() != window->isFullScreen() || window->isFullScreen() != data->fullScreen;
     if (!window->isManaged()
         || !window->isVisible()
         || !window->isOnCurrentDesktop()
@@ -113,6 +120,10 @@ void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const Re
     }
 
     if (maximizationChange && effects->activeEffects().contains(QStringLiteral("maximize"))) {
+        return;
+    }
+
+    if (fullScreenChange && effects->isEffectLoaded(QStringLiteral("fullscreen"))) {
         return;
     }
 
