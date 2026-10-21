@@ -6,7 +6,6 @@
 #include <effect/effectwindow.h>
 #include <window.h>
 
-#include <QDateTime>
 #include <QEasingCurve>
 
 #include <algorithm>
@@ -66,7 +65,7 @@ void GeometryChange::reconfigure()
 
 void GeometryChange::manage(EffectWindow *window)
 {
-    m_windows.insert(window, WindowData{.createdTime = QDateTime::currentMSecsSinceEpoch(), .fullScreen = window->isFullScreen()});
+    m_windows.insert(window, WindowData{.createdTime = std::chrono::steady_clock::now(), .fullScreen = window->isFullScreen()});
     connect(window, &EffectWindow::windowFrameGeometryChanged, this, &GeometryChange::onWindowFrameGeometryChanged);
     connect(window, &EffectWindow::windowMaximizedStateAboutToChange, this, [this, window](EffectWindow *, bool horizontal, bool vertical) {
         const auto data = m_windows.find(window);
@@ -139,11 +138,7 @@ void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const Re
         return;
     }
 
-    const qint64 now = QDateTime::currentMSecsSinceEpoch();
-    const qint64 windowAgeMs = now - data->createdTime;
-    if (windowAgeMs < 0) {
-        data->createdTime = now;
-    } else if (std::chrono::milliseconds(windowAgeMs) < m_openingDuration) {
+    if (std::chrono::steady_clock::now() - data->createdTime < m_openingDuration) {
         return;
     }
 

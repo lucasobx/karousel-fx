@@ -33,7 +33,7 @@ private:
 
     struct WindowData
     {
-        qint64 createdTime = 0;
+        std::chrono::steady_clock::time_point createdTime;
         int animationInstances = 0;
         bool maximizeChangePending = false;
         bool fullScreen = false;
