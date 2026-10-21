@@ -18,5 +18,17 @@
         <entry name="FocusRingColor" type="Color">
             <default>61,174,233</default>
         </entry>
+        <entry name="GeometryChangeEnabled" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="GeometryChangeDuration" type="UInt">
+            <default>250</default>
+        </entry>
+        <entry name="GeometryChangeExcludedWindowClasses" type="String">
+            <default>krunner,yakuake</default>
+        </entry>
+        <entry name="GeometryChangeCrossFade" type="Bool">
+            <default>false</default>
+        </entry>
     </group>
 </kcfg>

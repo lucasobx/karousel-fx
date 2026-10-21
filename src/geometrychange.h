@@ -1,0 +1,48 @@
+#pragma once
+
+#include <QHash>
+#include <QObject>
+#include <QStringList>
+
+#include <chrono>
+
+class KarouselFxConfig;
+class KarouselFxEffect;
+
+namespace KWin
+{
+class EffectWindow;
+class RectF;
+}
+
+class GeometryChange : public QObject
+{
+    Q_OBJECT
+
+public:
+    GeometryChange(KarouselFxEffect &effect, const KarouselFxConfig &config);
+    ~GeometryChange() override;
+
+    void reconfigure();
+    void restoreForceBlurState(KWin::EffectWindow *window);
+
+private:
+    struct WindowData
+    {
+        qint64 createdTime = 0;
+        int animationInstances = 0;
+        bool maximizedStateAboutToChange = false;
+    };
+
+    void manage(KWin::EffectWindow *window);
+    bool isWindowClassExcluded(const QString &windowClass) const;
+    void onWindowFrameGeometryChanged(KWin::EffectWindow *window, const KWin::RectF &oldGeometry);
+
+    KarouselFxEffect &m_effect;
+    const KarouselFxConfig &m_config;
+    std::chrono::milliseconds m_duration{0};
+    QStringList m_excludedWindowClasses;
+    bool m_crossFade = false;
+    bool m_userResizing = false;
+    QHash<KWin::EffectWindow *, WindowData> m_windows;
+};

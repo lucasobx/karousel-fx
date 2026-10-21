@@ -59,6 +59,61 @@
     </widget>
    </item>
    <item>
+    <widget class="QGroupBox" name="kcfg_GeometryChangeEnabled">
+     <property name="title">
+      <string>Geometry change</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <layout class="QFormLayout" name="geometryChangeLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="geometryChangeDurationLabel">
+        <property name="text">
+         <string>Duration:</string>
+        </property>
+        <property name="buddy">
+         <cstring>kcfg_GeometryChangeDuration</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="kcfg_GeometryChangeDuration">
+        <property name="suffix">
+         <string> milliseconds</string>
+        </property>
+        <property name="maximum">
+         <number>9999</number>
+        </property>
+        <property name="singleStep">
+         <number>5</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="geometryChangeExcludedWindowClassesLabel">
+        <property name="text">
+         <string>Excluded window classes:</string>
+        </property>
+        <property name="buddy">
+         <cstring>kcfg_GeometryChangeExcludedWindowClasses</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="kcfg_GeometryChangeExcludedWindowClasses"/>
+      </item>
+      <item row="2" column="1">
+       <widget class="QCheckBox" name="kcfg_GeometryChangeCrossFade">
+        <property name="text">
+         <string>Cross-fade</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>

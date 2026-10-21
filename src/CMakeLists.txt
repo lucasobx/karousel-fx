@@ -12,6 +12,7 @@ kcoreaddons_add_plugin(karouselfx
         plugin.cpp
         karouselfxeffect.cpp
         focusring.cpp
+        geometrychange.cpp
     INSTALL_NAMESPACE "kwin/effects/plugins"
 )
 
