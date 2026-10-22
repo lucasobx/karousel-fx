@@ -9,6 +9,7 @@
 #include <window.h>
 
 #include <QEasingCurve>
+#include <QRegularExpression>
 
 #include <algorithm>
 #include <cmath>
@@ -98,7 +99,7 @@ void GeometryChange::reconfigure()
 {
     m_duration = Effect::animationTime(std::chrono::milliseconds(m_config.geometryChangeDuration()));
     m_angularFrequency = m_duration.count() > 0 ? angularFrequencyScale / std::chrono::duration<qreal>(m_duration).count() : 0;
-    m_excludedWindowClasses = m_config.geometryChangeExcludedWindowClasses().split(QLatin1Char(','));
+    m_excludedWindowClasses = m_config.geometryChangeExcludedWindowClasses().trimmed().split(QRegularExpression(QStringLiteral("\\s*,\\s*")), Qt::SkipEmptyParts);
     m_crossFade = m_config.geometryChangeCrossFade();
     m_openingDuration = Effect::animationTime(GeometryChange::openingDuration);
 
