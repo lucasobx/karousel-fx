@@ -55,6 +55,8 @@ private:
         bool maximizeChangePending = false;
         bool fullScreen = false;
         std::optional<QSizeF> refusedSize{};
+        std::optional<quint64> crossFade{};
+        bool crossFadeWaiting = false;
     };
 
     struct Motion
@@ -74,6 +76,9 @@ private:
     void flushRequests();
     void release();
     void forget(KWin::EffectWindow *window);
+    void prepareCrossFade(KWin::EffectWindow *window, WindowData &data);
+    void startCrossFade(KWin::EffectWindow *window, WindowData &data);
+    void dropCrossFade(WindowData &data);
     void addRepaint(KWin::EffectWindow *window, const Motion &motion) const;
     void finish(KWin::EffectWindow *window, const Motion &motion);
     void stop(KWin::EffectWindow *window);

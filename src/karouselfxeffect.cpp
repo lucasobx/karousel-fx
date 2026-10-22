@@ -4,6 +4,8 @@
 
 #include <effect/effecthandler.h>
 
+#include <QEasingCurve>
+
 using namespace KWin;
 
 template<typename Component, typename... Args>
@@ -70,6 +72,10 @@ void KarouselFxEffect::paintWindow(const RenderTarget &renderTarget, const Rende
 void KarouselFxEffect::drawWindow(const RenderTarget &renderTarget, const RenderViewport &viewport, EffectWindow *window, int mask,
                                   const Region &deviceRegion, WindowPaintData &data)
 {
+    if (m_capturing) {
+        Effect::drawWindow(renderTarget, viewport, window, mask, deviceRegion, data);
+        return;
+    }
     if (m_focusRing && m_geometryChange && m_geometryChange->isAnimating(window)) {
         m_focusRing->applyPaintTransform(window, data);
     }
@@ -89,6 +95,14 @@ void KarouselFxEffect::geometryAnimationStopped(EffectWindow *window)
     if (m_focusRing) {
         m_focusRing->resetPaintTransform(window);
     }
+}
+
+quint64 KarouselFxEffect::crossFade(EffectWindow *window, std::chrono::milliseconds duration)
+{
+    m_capturing = true;
+    const quint64 animation = animate(window, CrossFadePrevious, 0, duration, FPx2(1), QEasingCurve(QEasingCurve::OutExpo), 0, FPx2(0));
+    m_capturing = false;
+    return animation;
 }
 
 bool KarouselFxEffect::supported()

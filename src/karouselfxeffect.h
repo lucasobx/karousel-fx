@@ -28,13 +28,17 @@ public:
     void postPaintScreen() override;
 
     void geometryAnimationStopped(KWin::EffectWindow *window);
+    quint64 crossFade(KWin::EffectWindow *window, std::chrono::milliseconds duration);
 
     static bool supported();
 
-    using KWin::AnimationEffect::animate;
+    using KWin::AnimationEffect::cancel;
+    using KWin::AnimationEffect::freezeInTime;
+    using KWin::AnimationEffect::retarget;
 
 private:
     KarouselFxConfig m_config;
     std::unique_ptr<FocusRing> m_focusRing;
     std::unique_ptr<GeometryChange> m_geometryChange;
+    bool m_capturing = false;
 };

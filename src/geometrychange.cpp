@@ -8,7 +8,6 @@
 #include <wayland/surface.h>
 #include <window.h>
 
-#include <QEasingCurve>
 #include <QRegularExpression>
 
 #include <algorithm>
@@ -69,14 +68,19 @@ GeometryChange::GeometryChange(KarouselFxEffect &effect, const KarouselFxConfig 
     m_deadline.setSingleShot(true);
     m_deadline.setInterval(transactionTimeout);
     connect(&m_deadline, &QTimer::timeout, this, [this] {
+        for (auto it = m_pending.cbegin(); it != m_pending.cend(); ++it) {
+            if (const auto data = m_windows.find(it.key()); data != m_windows.end()) {
+                dropCrossFade(*data);
+            }
+        }
         m_late.insert(m_pending);
         release();
     });
     connect(effects, &EffectsHandler::windowAdded, this, &GeometryChange::manage);
     connect(effects, &EffectsHandler::windowClosed, this, &GeometryChange::forget);
     connect(effects, &EffectsHandler::windowDeleted, this, [this](EffectWindow *window) {
-        m_windows.remove(window);
         forget(window);
+        m_windows.remove(window);
         stop(window);
     });
     const QList<EffectWindow *> windows = effects->stackingOrder();
@@ -89,6 +93,9 @@ GeometryChange::GeometryChange(KarouselFxEffect &effect, const KarouselFxConfig 
 
 GeometryChange::~GeometryChange()
 {
+    for (WindowData &data : m_windows) {
+        dropCrossFade(data);
+    }
     for (auto it = m_motions.cbegin(); it != m_motions.cend(); ++it) {
         addRepaint(it.key(), *it);
         it.key()->setData(WindowForceBlurRole, QVariant());
@@ -103,6 +110,11 @@ void GeometryChange::reconfigure()
     m_crossFade = m_config.geometryChangeCrossFade();
     m_openingDuration = Effect::animationTime(GeometryChange::openingDuration);
 
+    if (!m_crossFade || m_duration.count() <= 0) {
+        for (WindowData &data : m_windows) {
+            dropCrossFade(data);
+        }
+    }
     if (m_duration.count() <= 0) {
         const QList<EffectWindow *> windows = m_motions.keys();
         for (EffectWindow *window : windows) {
@@ -245,17 +257,12 @@ void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const Re
     const bool maximizationChange = data->maximizeChangePending;
     data->maximizeChangePending = false;
     const bool fullScreenChange = window->window()->isRequestedFullScreen() != window->isFullScreen() || window->isFullScreen() != data->fullScreen;
-    if (m_duration.count() <= 0 || !isAnimatable(window) || (isUserMoveResize && !maximizationChange)) {
-        stop(window);
-        return;
-    }
-
-    if (maximizationChange && effects->activeEffects().contains(QStringLiteral("maximize"))) {
-        stop(window);
-        return;
-    }
-
-    if (fullScreenChange && effects->isEffectLoaded(QStringLiteral("fullscreen"))) {
+    if (m_duration.count() <= 0
+        || !isAnimatable(window)
+        || (isUserMoveResize && !maximizationChange)
+        || (maximizationChange && effects->activeEffects().contains(QStringLiteral("maximize")))
+        || (fullScreenChange && effects->isEffectLoaded(QStringLiteral("fullscreen")))) {
+        dropCrossFade(*data);
         stop(window);
         return;
     }
@@ -272,6 +279,9 @@ void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const Re
     const bool opening = std::chrono::steady_clock::now() - data->createdTime < m_openingDuration;
     auto motion = m_motions.find(window);
     if (opening || (!resized && !moved)) {
+        if (!isResizePending(window)) {
+            dropCrossFade(*data);
+        }
         if (motion != m_motions.end()) {
             for (size_t i = 0; i < delta.size(); ++i) {
                 motion->rect[i] += delta[i];
@@ -302,8 +312,10 @@ void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const Re
     }
     addRepaint(window, *motion);
 
-    if (m_crossFade) {
-        m_effect.animate(window, AnimationEffect::CrossFadePrevious, 0, m_duration, FPx2(1), QEasingCurve(QEasingCurve::OutExpo), 0, FPx2(0));
+    if (resized && m_crossFade) {
+        startCrossFade(window, *data);
+    } else if (!isResizePending(window)) {
+        dropCrossFade(*data);
     }
 }
 
@@ -324,8 +336,11 @@ void GeometryChange::onCommitted(EffectWindow *window)
     }
 
     const auto data = m_windows.find(window);
-    if (data != m_windows.end() && !isSameSize(window->frameGeometry().size(), *request)) {
-        data->refusedSize = *request;
+    if (data != m_windows.end()) {
+        if (!isSameSize(window->frameGeometry().size(), *request)) {
+            data->refusedSize = *request;
+        }
+        dropCrossFade(*data);
     }
     waiting.erase(request);
     if (&waiting == &m_pending && m_pending.isEmpty()) {
@@ -342,11 +357,22 @@ void GeometryChange::flushRequests()
     const QSet<EffectWindow *> requested = std::exchange(m_requested, {});
     if (!isAnyWindowUserResized()) {
         for (EffectWindow *window : requested) {
-            const auto data = m_windows.constFind(window);
+            const auto data = m_windows.find(window);
+            if (data == m_windows.end()) {
+                continue;
+            }
             const QSizeF size = window->window()->moveResizeGeometry().size();
-            const bool refused = data != m_windows.cend() && data->refusedSize && isSameSize(*data->refusedSize, size);
-            if (!refused && !m_late.contains(window) && !window->isUserMove() && isAnimatable(window) && isResizePending(window)) {
-                m_pending.insert(window, size);
+            const bool refused = data->refusedSize && isSameSize(*data->refusedSize, size);
+            if (refused || m_late.contains(window) || window->isUserMove() || !isAnimatable(window) || !isResizePending(window)) {
+                continue;
+            }
+            m_pending.insert(window, size);
+
+            const QSizeF frame = window->frameGeometry().size();
+            const bool opening = std::chrono::steady_clock::now() - data->createdTime < m_openingDuration;
+            const qreal resize = std::max(std::abs(size.width() - frame.width()), std::abs(size.height() - frame.height()));
+            if (m_crossFade && m_duration.count() > 0 && !opening && resize > resizeThreshold) {
+                prepareCrossFade(window, *data);
             }
         }
     }
@@ -372,10 +398,48 @@ void GeometryChange::release()
 
 void GeometryChange::forget(EffectWindow *window)
 {
+    if (const auto data = m_windows.find(window); data != m_windows.end()) {
+        dropCrossFade(*data);
+    }
     m_requested.remove(window);
     m_late.remove(window);
     if (m_pending.remove(window) && m_pending.isEmpty()) {
         release();
+    }
+}
+
+void GeometryChange::prepareCrossFade(EffectWindow *window, WindowData &data)
+{
+    if (data.crossFadeWaiting) {
+        return;
+    }
+    if (data.crossFade) {
+        m_effect.cancel(*data.crossFade);
+    }
+    data.crossFade = m_effect.crossFade(window, m_duration);
+    data.crossFadeWaiting = m_effect.freezeInTime(*data.crossFade, 0);
+}
+
+void GeometryChange::startCrossFade(EffectWindow *window, WindowData &data)
+{
+    if (data.crossFadeWaiting) {
+        m_effect.freezeInTime(*data.crossFade, -1);
+        m_effect.retarget(*data.crossFade, FPx2(1), m_duration);
+        data.crossFadeWaiting = false;
+        return;
+    }
+    if (data.crossFade) {
+        m_effect.cancel(*data.crossFade);
+    }
+    data.crossFade = m_effect.crossFade(window, m_duration);
+}
+
+void GeometryChange::dropCrossFade(WindowData &data)
+{
+    if (data.crossFadeWaiting) {
+        m_effect.cancel(*data.crossFade);
+        data.crossFade.reset();
+        data.crossFadeWaiting = false;
     }
 }
 
