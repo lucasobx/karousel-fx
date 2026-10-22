@@ -18,6 +18,8 @@ public:
     ~KarouselFxEffect() override;
 
     void reconfigure(ReconfigureFlags flags) override;
+    void drawWindow(const KWin::RenderTarget &renderTarget, const KWin::RenderViewport &viewport, KWin::EffectWindow *window, int mask,
+                    const KWin::Region &deviceRegion, KWin::WindowPaintData &data) override;
 
     static bool supported();
 

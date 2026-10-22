@@ -11,8 +11,10 @@ class KarouselFxConfig;
 
 namespace KWin
 {
+class EffectWindow;
 class OutlinedBorderItem;
 class Window;
+class WindowPaintData;
 }
 
 class FocusRing : public QObject
@@ -24,6 +26,8 @@ public:
     ~FocusRing() override;
 
     void reconfigure();
+    void applyPaintTransform(KWin::EffectWindow *window, const KWin::WindowPaintData &data);
+    void resetPaintTransform(KWin::EffectWindow *window = nullptr);
 
 private:
     void setWindow(KWin::Window *window);

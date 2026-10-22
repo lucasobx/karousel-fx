@@ -1,6 +1,7 @@
 #include "focusring.h"
 #include "karouselfxconfig.h"
 
+#include <effect/effect.h>
 #include <effect/effecthandler.h>
 #include <effect/effectwindow.h>
 #include <scene/outlinedborderitem.h>
@@ -99,6 +100,30 @@ FocusRing::~FocusRing()
 void FocusRing::reconfigure()
 {
     updateColor();
+}
+
+void FocusRing::applyPaintTransform(EffectWindow *window, const WindowPaintData &data)
+{
+    const qreal xScale = data.xScale();
+    const qreal yScale = data.yScale();
+    if (!m_ring || window->window() != m_window || xScale <= 0 || yScale <= 0) {
+        return;
+    }
+
+    const qreal thickness = m_config.focusRingThickness();
+    const auto size = m_window->frameGeometry().size();
+    m_ring->setInnerRect(RectF(0, 0, size.width() * xScale, size.height() * yScale));
+    m_ring->setTransform(QTransform(1 / xScale, 0, 0, 1 / yScale, thickness * (1 - 1 / xScale), thickness * (1 - 1 / yScale)));
+}
+
+void FocusRing::resetPaintTransform(EffectWindow *window)
+{
+    if (!m_ring || (window && window->window() != m_window) || m_ring->transform().isIdentity()) {
+        return;
+    }
+
+    m_ring->setTransform(QTransform());
+    updateRing();
 }
 
 void FocusRing::setWindow(Window *window)

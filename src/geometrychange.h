@@ -25,6 +25,7 @@ public:
 
     void reconfigure();
     void restoreForceBlurState(KWin::EffectWindow *window);
+    bool isAnimating(KWin::EffectWindow *window) const;
 
 private:
     static constexpr std::chrono::milliseconds openingDuration{250};

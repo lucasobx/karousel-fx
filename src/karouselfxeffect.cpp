@@ -32,6 +32,18 @@ void KarouselFxEffect::reconfigure(ReconfigureFlags)
 
     reconfigureComponent(m_focusRing, m_config.focusRingEnabled(), m_config);
     reconfigureComponent(m_geometryChange, m_config.geometryChangeEnabled(), *this, m_config);
+    if (m_focusRing && !m_geometryChange) {
+        m_focusRing->resetPaintTransform();
+    }
+}
+
+void KarouselFxEffect::drawWindow(const RenderTarget &renderTarget, const RenderViewport &viewport, EffectWindow *window, int mask,
+                                  const Region &deviceRegion, WindowPaintData &data)
+{
+    if (m_focusRing && m_geometryChange && m_geometryChange->isAnimating(window)) {
+        m_focusRing->applyPaintTransform(window, data);
+    }
+    AnimationEffect::drawWindow(renderTarget, viewport, window, mask, deviceRegion, data);
 }
 
 bool KarouselFxEffect::supported()
@@ -44,5 +56,8 @@ void KarouselFxEffect::animationEnded(EffectWindow *window, Attribute attribute,
     AnimationEffect::animationEnded(window, attribute, meta);
     if (m_geometryChange) {
         m_geometryChange->restoreForceBlurState(window);
+        if (m_focusRing && !m_geometryChange->isAnimating(window)) {
+            m_focusRing->resetPaintTransform(window);
+        }
     }
 }

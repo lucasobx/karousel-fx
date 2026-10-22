@@ -99,6 +99,12 @@ void GeometryChange::restoreForceBlurState(EffectWindow *window)
     }
 }
 
+bool GeometryChange::isAnimating(EffectWindow *window) const
+{
+    const auto data = m_windows.constFind(window);
+    return data != m_windows.cend() && data->animationInstances > 0;
+}
+
 bool GeometryChange::isWindowClassExcluded(const QString &windowClass) const
 {
     const QStringList parts = windowClass.split(QLatin1Char(' '));
