@@ -4,7 +4,10 @@
 
 #include <QHash>
 #include <QObject>
+#include <QSet>
+#include <QSizeF>
 #include <QStringList>
+#include <QTimer>
 
 #include <array>
 #include <chrono>
@@ -37,6 +40,7 @@ public:
 
 private:
     static constexpr std::chrono::milliseconds openingDuration{250};
+    static constexpr std::chrono::milliseconds transactionTimeout{300};
     static constexpr std::chrono::nanoseconds maximumFrameInterval{16'666'667};
     static constexpr qreal resizeThreshold = 10;
     static constexpr qreal moveThreshold = 1;
@@ -50,6 +54,7 @@ private:
         std::chrono::steady_clock::time_point createdTime;
         bool maximizeChangePending = false;
         bool fullScreen = false;
+        std::optional<QSizeF> refusedSize{};
     };
 
     struct Motion
@@ -57,11 +62,18 @@ private:
         std::array<qreal, 4> rect;
         std::array<qreal, 4> velocity{};
         KWin::RectF painted;
+        std::optional<std::array<qreal, 4>> heldTarget{};
     };
 
     void manage(KWin::EffectWindow *window);
     bool isWindowClassExcluded(const QString &windowClass) const;
+    bool isAnimatable(const KWin::EffectWindow *window) const;
     void onWindowFrameGeometryChanged(KWin::EffectWindow *window, const KWin::RectF &oldGeometry);
+    void onGeometryRequested(KWin::EffectWindow *window);
+    void onCommitted(KWin::EffectWindow *window);
+    void flushRequests();
+    void release();
+    void forget(KWin::EffectWindow *window);
     void addRepaint(KWin::EffectWindow *window, const Motion &motion) const;
     void finish(KWin::EffectWindow *window, const Motion &motion);
     void stop(KWin::EffectWindow *window);
@@ -76,4 +88,8 @@ private:
     std::optional<std::chrono::nanoseconds> m_lastPresentation;
     QHash<KWin::EffectWindow *, WindowData> m_windows;
     QHash<KWin::EffectWindow *, Motion> m_motions;
+    QSet<KWin::EffectWindow *> m_requested;
+    QHash<KWin::EffectWindow *, QSizeF> m_pending;
+    QHash<KWin::EffectWindow *, QSizeF> m_late;
+    QTimer m_deadline;
 };

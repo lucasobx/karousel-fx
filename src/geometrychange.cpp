@@ -5,12 +5,14 @@
 #include <effect/effecthandler.h>
 #include <effect/effectwindow.h>
 #include <scene/scene.h>
+#include <wayland/surface.h>
 #include <window.h>
 
 #include <QEasingCurve>
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 using namespace KWin;
 
@@ -28,6 +30,16 @@ static bool isAnyWindowUserResized()
     return std::ranges::any_of(windows, [](const EffectWindow *window) {
         return window->isUserResize();
     });
+}
+
+static bool isSameSize(const QSizeF &size, const QSizeF &other)
+{
+    return std::abs(size.width() - other.width()) < 1 && std::abs(size.height() - other.height()) < 1;
+}
+
+static bool isResizePending(const EffectWindow *window)
+{
+    return !isSameSize(window->window()->moveResizeGeometry().size(), window->frameGeometry().size());
 }
 
 static std::array<qreal, 4> toArray(const RectF &rect)
@@ -53,9 +65,17 @@ GeometryChange::GeometryChange(KarouselFxEffect &effect, const KarouselFxConfig 
     : m_effect(effect)
     , m_config(config)
 {
+    m_deadline.setSingleShot(true);
+    m_deadline.setInterval(transactionTimeout);
+    connect(&m_deadline, &QTimer::timeout, this, [this] {
+        m_late.insert(m_pending);
+        release();
+    });
     connect(effects, &EffectsHandler::windowAdded, this, &GeometryChange::manage);
+    connect(effects, &EffectsHandler::windowClosed, this, &GeometryChange::forget);
     connect(effects, &EffectsHandler::windowDeleted, this, [this](EffectWindow *window) {
         m_windows.remove(window);
+        forget(window);
         stop(window);
     });
     const QList<EffectWindow *> windows = effects->stackingOrder();
@@ -94,6 +114,14 @@ void GeometryChange::manage(EffectWindow *window)
 {
     m_windows.insert(window, WindowData{.createdTime = std::chrono::steady_clock::now(), .fullScreen = window->isFullScreen()});
     connect(window, &EffectWindow::windowFrameGeometryChanged, this, &GeometryChange::onWindowFrameGeometryChanged);
+    connect(window->window(), &Window::frameGeometryAboutToChange, this, [this, window] {
+        onGeometryRequested(window);
+    });
+    if (SurfaceInterface *surface = window->window()->surface()) {
+        connect(surface, &SurfaceInterface::committed, this, [this, window] {
+            onCommitted(window);
+        });
+    }
     connect(window, &EffectWindow::windowMaximizedStateAboutToChange, this, [this, window](EffectWindow *, bool horizontal, bool vertical) {
         const auto data = m_windows.find(window);
         if (data != m_windows.end()) {
@@ -127,6 +155,7 @@ bool GeometryChange::isAnimating(EffectWindow *window) const
 
 void GeometryChange::advance(const RenderView *view)
 {
+    flushRequests();
     if (m_motions.isEmpty() || !view) {
         return;
     }
@@ -141,8 +170,8 @@ void GeometryChange::advance(const RenderView *view)
 
     for (auto it = m_motions.begin(); it != m_motions.end();) {
         EffectWindow *window = it.key();
-        const std::array<qreal, 4> target = toArray(window->frameGeometry());
-        bool settled = true;
+        const std::array<qreal, 4> target = it->heldTarget.value_or(toArray(window->frameGeometry()));
+        bool settled = !it->heldTarget;
         for (size_t i = 0; i < target.size(); ++i) {
             const qreal offset = it->rect[i] - target[i];
             const qreal impulse = it->velocity[i] + m_angularFrequency * offset;
@@ -190,27 +219,32 @@ bool GeometryChange::isWindowClassExcluded(const QString &windowClass) const
     });
 }
 
+bool GeometryChange::isAnimatable(const EffectWindow *window) const
+{
+    return window->isManaged()
+        && window->isVisible()
+        && window->isOnCurrentDesktop()
+        && !window->isMinimized()
+        && (window->isNormalWindow() || window->isDialog() || window->isModal())
+        && !isWindowClassExcluded(window->windowClass())
+        && !isGrabbedByAnotherEffect(window);
+}
+
 void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const RectF &oldGeometry)
 {
     const auto data = m_windows.find(window);
     if (data == m_windows.end()) {
         return;
     }
+    if (window->frameGeometry().size() != oldGeometry.size()) {
+        data->refusedSize.reset();
+    }
 
-    const bool windowTypeSupportsAnimation = window->isNormalWindow() || window->isDialog() || window->isModal();
     const bool isUserMoveResize = window->isUserMove() || isAnyWindowUserResized();
     const bool maximizationChange = data->maximizeChangePending;
     data->maximizeChangePending = false;
     const bool fullScreenChange = window->window()->isRequestedFullScreen() != window->isFullScreen() || window->isFullScreen() != data->fullScreen;
-    if (m_duration.count() <= 0
-        || !window->isManaged()
-        || !window->isVisible()
-        || !window->isOnCurrentDesktop()
-        || window->isMinimized()
-        || !windowTypeSupportsAnimation
-        || (isUserMoveResize && !maximizationChange)
-        || isWindowClassExcluded(window->windowClass())
-        || isGrabbedByAnotherEffect(window)) {
+    if (m_duration.count() <= 0 || !isAnimatable(window) || (isUserMoveResize && !maximizationChange)) {
         stop(window);
         return;
     }
@@ -254,14 +288,93 @@ void GeometryChange::onWindowFrameGeometryChanged(EffectWindow *window, const Re
         motion = m_motions.insert(window, Motion{.rect = rect, .painted = visualGeometry(window, rect)});
         window->setData(WindowForceBlurRole, true);
     }
+    if (!motion->heldTarget && (!m_requested.isEmpty() || !m_pending.isEmpty())) {
+        motion->heldTarget = toArray(oldGeometry);
+    }
     if (!resized) {
         motion->rect[2] += delta[2];
         motion->rect[3] += delta[3];
+        if (motion->heldTarget) {
+            (*motion->heldTarget)[2] += delta[2];
+            (*motion->heldTarget)[3] += delta[3];
+        }
     }
     addRepaint(window, *motion);
 
     if (m_crossFade) {
         m_effect.animate(window, AnimationEffect::CrossFadePrevious, 0, m_duration, FPx2(1), QEasingCurve(QEasingCurve::OutExpo), 0, FPx2(0));
+    }
+}
+
+void GeometryChange::onGeometryRequested(EffectWindow *window)
+{
+    if (m_requested.isEmpty()) {
+        QTimer::singleShot(0, this, &GeometryChange::flushRequests);
+    }
+    m_requested.insert(window);
+}
+
+void GeometryChange::onCommitted(EffectWindow *window)
+{
+    QHash<EffectWindow *, QSizeF> &waiting = m_pending.contains(window) ? m_pending : m_late;
+    const auto request = waiting.constFind(window);
+    if (request == waiting.cend() || isResizePending(window)) {
+        return;
+    }
+
+    const auto data = m_windows.find(window);
+    if (data != m_windows.end() && !isSameSize(window->frameGeometry().size(), *request)) {
+        data->refusedSize = *request;
+    }
+    waiting.erase(request);
+    if (&waiting == &m_pending && m_pending.isEmpty()) {
+        release();
+    }
+}
+
+void GeometryChange::flushRequests()
+{
+    if (m_requested.isEmpty()) {
+        return;
+    }
+
+    const QSet<EffectWindow *> requested = std::exchange(m_requested, {});
+    if (!isAnyWindowUserResized()) {
+        for (EffectWindow *window : requested) {
+            const auto data = m_windows.constFind(window);
+            const QSizeF size = window->window()->moveResizeGeometry().size();
+            const bool refused = data != m_windows.cend() && data->refusedSize && isSameSize(*data->refusedSize, size);
+            if (!refused && !m_late.contains(window) && !window->isUserMove() && isAnimatable(window) && isResizePending(window)) {
+                m_pending.insert(window, size);
+            }
+        }
+    }
+
+    if (m_pending.isEmpty()) {
+        release();
+    } else if (!m_deadline.isActive()) {
+        m_deadline.start();
+    }
+}
+
+void GeometryChange::release()
+{
+    m_deadline.stop();
+    m_pending.clear();
+    for (auto it = m_motions.begin(); it != m_motions.end(); ++it) {
+        if (it->heldTarget) {
+            it->heldTarget.reset();
+            addRepaint(it.key(), *it);
+        }
+    }
+}
+
+void GeometryChange::forget(EffectWindow *window)
+{
+    m_requested.remove(window);
+    m_late.remove(window);
+    if (m_pending.remove(window) && m_pending.isEmpty()) {
+        release();
     }
 }
 
