@@ -37,6 +37,36 @@ void KarouselFxEffect::reconfigure(ReconfigureFlags)
     }
 }
 
+bool KarouselFxEffect::isActive() const
+{
+    return AnimationEffect::isActive() || (m_geometryChange && m_geometryChange->isAnimating());
+}
+
+void KarouselFxEffect::prePaintScreen(ScreenPrePaintData &data)
+{
+    if (m_geometryChange) {
+        m_geometryChange->advance(data.view);
+    }
+    AnimationEffect::prePaintScreen(data);
+}
+
+void KarouselFxEffect::prePaintWindow(RenderView *view, EffectWindow *window, WindowPrePaintData &data)
+{
+    if (m_geometryChange && m_geometryChange->isAnimating(window)) {
+        data.setTransformed();
+    }
+    AnimationEffect::prePaintWindow(view, window, data);
+}
+
+void KarouselFxEffect::paintWindow(const RenderTarget &renderTarget, const RenderViewport &viewport, EffectWindow *window, int mask,
+                                   const Region &deviceRegion, WindowPaintData &data)
+{
+    if (m_geometryChange) {
+        m_geometryChange->applyTransform(window, data);
+    }
+    AnimationEffect::paintWindow(renderTarget, viewport, window, mask, deviceRegion, data);
+}
+
 void KarouselFxEffect::drawWindow(const RenderTarget &renderTarget, const RenderViewport &viewport, EffectWindow *window, int mask,
                                   const Region &deviceRegion, WindowPaintData &data)
 {
@@ -46,18 +76,22 @@ void KarouselFxEffect::drawWindow(const RenderTarget &renderTarget, const Render
     AnimationEffect::drawWindow(renderTarget, viewport, window, mask, deviceRegion, data);
 }
 
+void KarouselFxEffect::postPaintScreen()
+{
+    if (m_geometryChange) {
+        m_geometryChange->scheduleRepaints();
+    }
+    AnimationEffect::postPaintScreen();
+}
+
+void KarouselFxEffect::geometryAnimationStopped(EffectWindow *window)
+{
+    if (m_focusRing) {
+        m_focusRing->resetPaintTransform(window);
+    }
+}
+
 bool KarouselFxEffect::supported()
 {
     return effects->isOpenGLCompositing();
-}
-
-void KarouselFxEffect::animationEnded(EffectWindow *window, Attribute attribute, uint meta)
-{
-    AnimationEffect::animationEnded(window, attribute, meta);
-    if (m_geometryChange) {
-        m_geometryChange->restoreForceBlurState(window);
-        if (m_focusRing && !m_geometryChange->isAnimating(window)) {
-            m_focusRing->resetPaintTransform(window);
-        }
-    }
 }

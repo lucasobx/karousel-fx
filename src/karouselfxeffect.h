@@ -18,15 +18,20 @@ public:
     ~KarouselFxEffect() override;
 
     void reconfigure(ReconfigureFlags flags) override;
+    bool isActive() const override;
+    void prePaintScreen(KWin::ScreenPrePaintData &data) override;
+    void prePaintWindow(KWin::RenderView *view, KWin::EffectWindow *window, KWin::WindowPrePaintData &data) override;
+    void paintWindow(const KWin::RenderTarget &renderTarget, const KWin::RenderViewport &viewport, KWin::EffectWindow *window, int mask,
+                     const KWin::Region &deviceRegion, KWin::WindowPaintData &data) override;
     void drawWindow(const KWin::RenderTarget &renderTarget, const KWin::RenderViewport &viewport, KWin::EffectWindow *window, int mask,
                     const KWin::Region &deviceRegion, KWin::WindowPaintData &data) override;
+    void postPaintScreen() override;
+
+    void geometryAnimationStopped(KWin::EffectWindow *window);
 
     static bool supported();
 
     using KWin::AnimationEffect::animate;
-
-protected:
-    void animationEnded(KWin::EffectWindow *window, Attribute attribute, uint meta) override;
 
 private:
     KarouselFxConfig m_config;
