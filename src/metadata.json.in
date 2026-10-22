@@ -3,7 +3,7 @@
         "Category": "Appearance",
         "Description": "Visual effects for Karousel",
         "EnabledByDefault": false,
-        "License": "GPL-3.0-or-later",
+        "License": "GPL-3.0",
         "Name": "@KAROUSELFX_PLUGIN_NAME@"
     },
     "X-KDE-ConfigModule": "@KAROUSELFX_PLUGIN_ID@_config",
