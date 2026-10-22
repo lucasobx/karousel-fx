@@ -4,121 +4,159 @@
  <widget class="QWidget" name="KarouselFxEffectConfig">
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="kcfg_FocusRingEnabled">
-     <property name="title">
-      <string>Focus ring</string>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
      </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <layout class="QFormLayout" name="focusRingLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="focusRingThicknessLabel">
-        <property name="text">
-         <string>Thickness:</string>
-        </property>
-        <property name="buddy">
-         <cstring>kcfg_FocusRingThickness</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QDoubleSpinBox" name="kcfg_FocusRingThickness">
-        <property name="suffix">
-         <string> px</string>
-        </property>
-        <property name="decimals">
-         <number>1</number>
-        </property>
-        <property name="singleStep">
-         <double>0.500000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="focusRingColorLabel">
-        <property name="text">
-         <string>Color:</string>
-        </property>
-        <property name="buddy">
-         <cstring>kcfg_FocusRingUseAccentColor</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QCheckBox" name="kcfg_FocusRingUseAccentColor">
-        <property name="text">
-         <string>Use accent color</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="KColorButton" name="kcfg_FocusRingColor"/>
-      </item>
-     </layout>
+     <widget class="QWidget" name="focusRingTab">
+      <attribute name="title">
+       <string>Focus ring</string>
+      </attribute>
+      <layout class="QFormLayout" name="focusRingLayout">
+       <item row="0" column="1">
+        <widget class="QCheckBox" name="kcfg_FocusRingEnabled">
+         <property name="text">
+          <string>Outline the active window</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="focusRingThicknessLabel">
+         <property name="text">
+          <string>Thickness:</string>
+         </property>
+         <property name="buddy">
+          <cstring>kcfg_FocusRingThickness</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="kcfg_FocusRingThickness">
+         <property name="suffix">
+          <string> px</string>
+         </property>
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="singleStep">
+          <double>0.500000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="focusRingColorLabel">
+         <property name="text">
+          <string>Color:</string>
+         </property>
+         <property name="buddy">
+          <cstring>kcfg_FocusRingUseAccentColor</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <layout class="QHBoxLayout" name="focusRingColorLayout">
+         <item>
+          <widget class="QCheckBox" name="kcfg_FocusRingUseAccentColor">
+           <property name="text">
+            <string>Accent color</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="KColorButton" name="kcfg_FocusRingColor">
+           <property name="visible">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="focusRingColorSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="geometryChangeTab">
+      <attribute name="title">
+       <string>Window motion</string>
+      </attribute>
+      <layout class="QFormLayout" name="geometryChangeLayout">
+       <item row="0" column="1">
+        <widget class="QCheckBox" name="kcfg_GeometryChangeEnabled">
+         <property name="text">
+          <string>Animate windows that move or resize</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="geometryChangeDurationLabel">
+         <property name="text">
+          <string>Duration:</string>
+         </property>
+         <property name="buddy">
+          <cstring>kcfg_GeometryChangeDuration</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QSpinBox" name="kcfg_GeometryChangeDuration">
+         <property name="suffix">
+          <string> ms</string>
+         </property>
+         <property name="maximum">
+          <number>9999</number>
+         </property>
+         <property name="singleStep">
+          <number>5</number>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="geometryChangeCrossFadeLabel">
+         <property name="text">
+          <string>Contents:</string>
+         </property>
+         <property name="buddy">
+          <cstring>kcfg_GeometryChangeCrossFade</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QCheckBox" name="kcfg_GeometryChangeCrossFade">
+         <property name="text">
+          <string>Cross-fade while animating</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="geometryChangeExcludedWindowClassesLabel">
+         <property name="text">
+          <string>Excluded window classes:</string>
+         </property>
+         <property name="buddy">
+          <cstring>kcfg_GeometryChangeExcludedWindowClasses</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="kcfg_GeometryChangeExcludedWindowClasses"/>
+       </item>
+      </layout>
+     </widget>
     </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="kcfg_GeometryChangeEnabled">
-     <property name="title">
-      <string>Geometry change</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <layout class="QFormLayout" name="geometryChangeLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="geometryChangeDurationLabel">
-        <property name="text">
-         <string>Duration:</string>
-        </property>
-        <property name="buddy">
-         <cstring>kcfg_GeometryChangeDuration</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QSpinBox" name="kcfg_GeometryChangeDuration">
-        <property name="suffix">
-         <string> milliseconds</string>
-        </property>
-        <property name="maximum">
-         <number>9999</number>
-        </property>
-        <property name="singleStep">
-         <number>5</number>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="geometryChangeExcludedWindowClassesLabel">
-        <property name="text">
-         <string>Excluded window classes:</string>
-        </property>
-        <property name="buddy">
-         <cstring>kcfg_GeometryChangeExcludedWindowClasses</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="kcfg_GeometryChangeExcludedWindowClasses"/>
-      </item>
-      <item row="2" column="1">
-       <widget class="QCheckBox" name="kcfg_GeometryChangeCrossFade">
-        <property name="text">
-         <string>Cross-fade</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-    </spacer>
    </item>
   </layout>
  </widget>
@@ -134,7 +172,73 @@
    <sender>kcfg_FocusRingUseAccentColor</sender>
    <signal>toggled(bool)</signal>
    <receiver>kcfg_FocusRingColor</receiver>
-   <slot>setDisabled(bool)</slot>
+   <slot>setHidden(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_FocusRingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>focusRingThicknessLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_FocusRingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_FocusRingThickness</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_FocusRingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>focusRingColorLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_FocusRingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_FocusRingUseAccentColor</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_FocusRingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_FocusRingColor</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_GeometryChangeEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>geometryChangeDurationLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_GeometryChangeEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_GeometryChangeDuration</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_GeometryChangeEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>geometryChangeCrossFadeLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_GeometryChangeEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_GeometryChangeCrossFade</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_GeometryChangeEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>geometryChangeExcludedWindowClassesLabel</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_GeometryChangeEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_GeometryChangeExcludedWindowClasses</receiver>
+   <slot>setEnabled(bool)</slot>
   </connection>
  </connections>
 </ui>
