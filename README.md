@@ -12,7 +12,7 @@ Window motion started out as a C++ port of Peter Fajdiga's [Geometry Change](htt
 
 ## Requirements
 
-- KDE Plasma 6.7 or later.
+- KDE Plasma 6.8 or later.
 
 ## Install
 

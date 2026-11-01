@@ -27,8 +27,8 @@ list(APPEND CMAKE_AUTOMOC_MACRO_NAMES
 
 find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Widgets DBus)
 find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS ColorScheme Config CoreAddons KCMUtils WidgetsAddons)
-find_package(KDecoration3 6.7 REQUIRED)
-find_package(KWin 6.7 REQUIRED)
+find_package(KDecoration3 6.8 REQUIRED)
+find_package(KWin 6.8 REQUIRED)
 
 set(KAROUSELFX_PLUGIN_ID "karousel-fx" CACHE STRING "")
 set(KAROUSELFX_PLUGIN_NAME "Karousel FX" CACHE STRING "")

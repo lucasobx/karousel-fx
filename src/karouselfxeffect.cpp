@@ -60,26 +60,25 @@ void KarouselFxEffect::prePaintWindow(RenderView *view, EffectWindow *window, Wi
     AnimationEffect::prePaintWindow(view, window, data);
 }
 
-void KarouselFxEffect::paintWindow(const RenderTarget &renderTarget, const RenderViewport &viewport, EffectWindow *window, int mask,
+bool KarouselFxEffect::paintWindow(const RenderTarget &renderTarget, const RenderViewport &viewport, EffectWindow *window, int mask,
                                    const Region &deviceRegion, WindowPaintData &data)
 {
     if (m_geometryChange) {
         m_geometryChange->applyTransform(window, data);
     }
-    AnimationEffect::paintWindow(renderTarget, viewport, window, mask, deviceRegion, data);
+    return AnimationEffect::paintWindow(renderTarget, viewport, window, mask, deviceRegion, data);
 }
 
-void KarouselFxEffect::drawWindow(const RenderTarget &renderTarget, const RenderViewport &viewport, EffectWindow *window, int mask,
+bool KarouselFxEffect::drawWindow(const RenderTarget &renderTarget, const RenderViewport &viewport, EffectWindow *window, int mask,
                                   const Region &deviceRegion, WindowPaintData &data)
 {
     if (m_capturing) {
-        Effect::drawWindow(renderTarget, viewport, window, mask, deviceRegion, data);
-        return;
+        return Effect::drawWindow(renderTarget, viewport, window, mask, deviceRegion, data);
     }
     if (m_focusRing && m_geometryChange && m_geometryChange->isAnimating(window)) {
         m_focusRing->applyPaintTransform(window, data);
     }
-    AnimationEffect::drawWindow(renderTarget, viewport, window, mask, deviceRegion, data);
+    return AnimationEffect::drawWindow(renderTarget, viewport, window, mask, deviceRegion, data);
 }
 
 void KarouselFxEffect::postPaintScreen()
